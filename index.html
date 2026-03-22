@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panduu 💖</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #000;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 700px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+      text-align: center;
+    }
+
+    /* ── Proposal view ── */
+    #proposal-view { width: 100%; display: flex; flex-direction: column; align-items: center; }
+
+    .heart-row {
+      font-size: 44px;
+      letter-spacing: 12px;
+      margin-bottom: 1.6rem;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.1); }
+    }
+
+    .question {
+      font-size: 28px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+
+    .sub {
+      font-size: 15px;
+      color: #888;
+      margin-bottom: 2.8rem;
+    }
+
+    /* ── Stage (button area) ── */
+    #stage {
+      position: relative;
+      width: 360px;
+      height: 180px;
+      margin: 0 auto;
+    }
+
+    /* YES */
+    .btn-yes {
+      position: absolute;
+      left: 180px;
+      top: 50%;
+      transform: translateY(-50%) scale(1);
+      background: #1a1a1a;
+      color: #fff;
+      border: 1.5px solid #333;
+      border-radius: 18px;
+      width: 160px;
+      height: 80px;
+      font-size: 22px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.4s cubic-bezier(.34,1.56,.64,1);
+      white-space: nowrap;
+      z-index: 2;
+    }
+    .btn-yes:hover { background: #222; }
+
+    /* NO */
+    .btn-no {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      color: #888;
+      border: 1px solid #444;
+      border-radius: 50px;
+      padding: 0 20px;
+      height: 38px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      z-index: 3;
+      user-select: none;
+      transition:
+        left   0.55s cubic-bezier(.25,.46,.45,.94),
+        top    0.55s cubic-bezier(.25,.46,.45,.94),
+        font-size 0.3s, opacity 0.3s, height 0.3s, padding 0.3s;
+    }
+
+    #hint {
+      font-size: 13px;
+      color: #666;
+      margin-top: 1.4rem;
+      min-height: 20px;
+    }
+
+    /* ── Celebrate view ── */
+    #celebrate-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.1rem;
+    }
+    #celebrate-view.show {
+      display: flex;
+      animation: popIn 0.5s ease;
+    }
+    @keyframes popIn {
+      0%   { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    .confetti-row { font-size: 38px; letter-spacing: 12px; }
+    .yay-hearts   { font-size: 32px; letter-spacing: 10px; animation: pulse 1.4s ease-in-out infinite; }
+    .yay-text     { font-size: 32px; font-weight: 600; color: #d4537e; }
+    .yay-sub      { font-size: 16px; color: #888; }
+    .yay-forever  { font-size: 14px; color: #666; margin-top: 0.3rem; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Proposal ── -->
+  <div id="proposal-view">
+    <div class="heart-row">🌸 💖 🌸</div>
+    <p class="question">Can you accept my proposal, Panduu? 🥺</p>
+    <p class="sub">My heart is all yours 💝</p>
+
+    <div id="stage">
+      <button class="btn-yes" id="yes-btn" onclick="sayYes()">Yes 💕</button>
+      <button class="btn-no"  id="no-btn"  onclick="clickNo()">No 🙈</button>
+    </div>
+
+    <p id="hint">Go on, try clicking No! 😏</p>
+  </div>
+
+  <!-- ── Celebrate ── -->
+  <div id="celebrate-view">
+    <div class="confetti-row">🎉 🎊 🎉</div>
+    <div class="yay-hearts">💖 💕 💖</div>
+    <div class="yay-text">She said Yes! 🥳</div>
+    <div class="yay-sub">I know you likes me alot 🥰💕</div>
+    <div class="yay-forever">Forever starts now 💍</div>
+  </div>
+
+</div>
+
+<script>
+  var noCount       = 0;
+  var CLICK_PHASE   = 5;
+  var stageW        = 360;
+  var stageH        = 180;
+  var noBtnW        = 100;
+  var noBtnH        = 38;
+  var noX           = 20;
+  var noY           = 71;   /* (180-38)/2 */
+  var runawayEnabled = false;
+
+  var hints = [
+    "Go on, try clicking No! 😏",
+    "Are you sure? 🤔",
+    "Really? Still No? 😅",
+    "Come on Panduu... 🥺",
+    "Last chance to say No! 😂",
+    "Too slow! 😄 Just say Yes 💕",
+    "It keeps running away! 🏃‍♀️",
+    "No is getting tired of running 😂",
+    "Yes is waiting patiently 💖",
+    "You can't catch No! 🙈"
+  ];
+
+  var yesScales = [1, 1.15, 1.35, 1.6, 1.9, 2.15];
+
+  /* ── helpers ── */
+  function getNoBtn() { return document.getElementById('no-btn'); }
+  function getYesBtn(){ return document.getElementById('yes-btn'); }
+
+  function placeNoAbsolute() {
+    var b = getNoBtn();
+    b.style.transition = 'none';
+    b.style.transform  = 'none';
+    b.style.left       = noX + 'px';
+    b.style.top        = noY + 'px';
+    setTimeout(function(){
+      b.style.transition = 'left 0.55s cubic-bezier(.25,.46,.45,.94), top 0.55s cubic-bezier(.25,.46,.45,.94), font-size 0.3s, opacity 0.3s, height 0.3s, padding 0.3s';
+    }, 30);
+  }
+
+  /* ── click No (phase 1 — stays put) ── */
+  function clickNo() {
+    if (runawayEnabled) return;
+    noCount++;
+    updateHint();
+    growYes();
+    shrinkNo();
+
+    if (noCount >= CLICK_PHASE) {
+      runawayEnabled = true;
+      /* snapshot current visual position then switch to absolute coords */
+      var b = getNoBtn();
+      var stage = document.getElementById('stage');
+      var sr = stage.getBoundingClientRect();
+      var br = b.getBoundingClientRect();
+      noX = br.left - sr.left;
+      noY = br.top  - sr.top;
+      placeNoAbsolute();
+      enableRunaway();
+    }
+  }
+
+  function updateHint() {
+    var idx = Math.min(noCount, hints.length - 1);
+    document.getElementById('hint').textContent = hints[idx];
+  }
+
+  function growYes() {
+    var idx = Math.min(noCount, yesScales.length - 1);
+    getYesBtn().style.transform = 'translateY(-50%) scale(' + yesScales[idx] + ')';
+  }
+
+  function shrinkNo() {
+    var b = getNoBtn();
+    var sizes    = [14, 13, 12, 11, 10, 9];
+    var heights  = [38, 34, 30, 26, 22, 18];
+    var paddings = [20, 17, 14, 11,  9,  7];
+    var idx = Math.min(noCount, sizes.length - 1);
+    b.style.fontSize = sizes[idx]    + 'px';
+    b.style.height   = heights[idx]  + 'px';
+    b.style.padding  = '0 ' + paddings[idx] + 'px';
+    noBtnH = heights[idx];
+    if (noCount >= CLICK_PHASE) b.style.opacity = '0.35';
+  }
+
+  /* ── runaway phase ── */
+  function enableRunaway() {
+    var stage = document.getElementById('stage');
+    stage.addEventListener('mousemove', onMouseMove);
+    stage.addEventListener('touchmove', onTouchMove, { passive: true });
+  }
+
+  function onMouseMove(e) {
+    var r  = document.getElementById('stage').getBoundingClientRect();
+    maybeRunAway(e.clientX - r.left, e.clientY - r.top);
+  }
+  function onTouchMove(e) {
+    var t  = e.touches[0];
+    var r  = document.getElementById('stage').getBoundingClientRect();
+    maybeRunAway(t.clientX - r.left, t.clientY - r.top);
+  }
+
+  function maybeRunAway(cx, cy) {
+    var btnCX = noX + noBtnW / 2;
+    var btnCY = noY + noBtnH / 2;
+    var dist  = Math.sqrt((cx-btnCX)*(cx-btnCX) + (cy-btnCY)*(cy-btnCY));
+    if (dist < 80) runTo(cx, cy);
+  }
+
+  function runTo(cursorX, cursorY) {
+    var maxW = stageW - noBtnW - 4;
+    var maxH = stageH - noBtnH - 4;
+    var newX, newY, dc, dy, attempts = 0;
+    do {
+      newX = 4 + Math.random() * maxW;
+      newY = 4 + Math.random() * maxH;
+      dc   = Math.sqrt((cursorX-(newX+noBtnW/2))*(cursorX-(newX+noBtnW/2)) + (cursorY-(newY+noBtnH/2))*(cursorY-(newY+noBtnH/2)));
+      dy   = Math.sqrt((240-(newX+noBtnW/2))*(240-(newX+noBtnW/2))         + (90-(newY+noBtnH/2))*(90-(newY+noBtnH/2)));
+      attempts++;
+    } while ((dc < 90 || dy < 70) && attempts < 40);
+
+    noX = newX; noY = newY;
+    var b = getNoBtn();
+    b.style.left = noX + 'px';
+    b.style.top  = noY + 'px';
+  }
+
+  /* ── Yes ── */
+  function sayYes() {
+    document.getElementById('proposal-view').style.display = 'none';
+    document.getElementById('celebrate-view').classList.add('show');
+  }
+</script>
+</body>
+</html>
